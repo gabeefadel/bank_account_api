@@ -10,8 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('bank_accounts', function (Blueprint $table) {
-            $table->id(); // Conta ID
-            // 10 dígitos no total, 2 decimais (ex: 99.999.999,99)
+            $table->id(); 
             $table->decimal('balance', 10, 2)->default(0.00); 
             $table->timestamps();
         });

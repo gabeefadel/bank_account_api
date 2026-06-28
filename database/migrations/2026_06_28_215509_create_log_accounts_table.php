@@ -11,8 +11,6 @@ return new class extends Migration
     {
         Schema::create('log_accounts', function (Blueprint $table) {
             $table->id();
-            
-            // Chaves estrangeiras apontando para as tabelas corretas
             $table->foreignId('bank_account_id')->constrained('bank_accounts')->onDelete('cascade');
             $table->foreignId('banking_operation_id')->constrained('banking_operations');
             

@@ -42,18 +42,18 @@ For the `transfer` feature, the API guarantees that money deducted from the orig
 ## 📖 API Endpoints & Event Specification
 
 ### State Management
-* `POST /api/reset` - Resets the state of the application before running test suites.
+* `POST /reset` - Resets the state of the application before running test suites.
   * **Response:** `200 OK`
 
 ### Balance Actions
-* `GET /api/balance?account_id={id}` - Retrieves the current balance for an account.
+* `GET /balance?account_id={id}` - Retrieves the current balance for an account.
   * **Response (Existing Account):** `200 OK` (Body: `20`)
   * **Response (Non-existing Account):** `404 Not Found` (Body: `0`)
 
 ---
 
 ### Transactional Events
-* `POST /api/event` - Single endpoint handling dynamic financial events (`deposit`, `withdraw`, and `transfer`).
+* `POST /event` - Single endpoint handling dynamic financial events (`deposit`, `withdraw`, and `transfer`).
 
 #### 1. Deposit
 Used to initialize an account or add funds to an existing one.

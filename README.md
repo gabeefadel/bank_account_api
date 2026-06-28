@@ -1,10 +1,4 @@
-Aqui está o arquivo `README.md` completo, unificado e totalmente formatado em Markdown padrão do GitHub.
 
-Removi as duplicidades de tecnologias, organizei os blocos de código com a sintaxe correta (`json` e `bash`) e ajustei a estrutura de títulos para garantir uma leitura fluida e profissional.
-
-Basta copiar o conteúdo abaixo e colar direto no seu arquivo `README.md`:
-
-```markdown
 # Bank Account API
 
 A production-ready, highly structured RESTful API designed to manage essential banking operations. This project implements clean architectural patterns to ensure scalability, robust data consistency, and strict business rule validation.

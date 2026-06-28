@@ -11,25 +11,46 @@ A production-ready, highly structured RESTful API designed to manage essential b
 * **Deposits:** Safely increase account balances with strict input validation.
 * **Withdrawals:** Process debits while ensuring sufficient funds and enforcing account limits.
 * **Transfers:** Atomically move values between accounts, guaranteeing transaction safety (ACID principles).
-* **Balance & Statements:** Fetch real-time balances and transactional history.
+* **Balance & Statements:** Fetch real-time balances and transactional history under strict security constraints.
 
 ---
 
 ## 🛠️ Tech Stack & Architecture
 
-* **Framework:** PHP (Laravel / Laravel Sail)
+* **Framework:** PHP 8.3 (Laravel 11 / Laravel Sail)
+* **Authentication:** Laravel Sanctum (Bearer Token)
 * **Architecture:** Service Pattern / Clean Architecture approach
 * **Database:** MySQL / PostgreSQL (handling atomic transactions)
-* **Testing:** PHPUnit (Unit and Integration tests)
+* **Testing:** PHPUnit (Feature and Integration tests)
 
 The codebase strictly adheres to **Clean Code** principles, using explicit, English-named variables and methods, keeping business logic completely decoupled from HTTP layers.
+
+---
+
+## 🛡️ Security Architecture & Anti-SQLi
+
+This API implements a multi-layered security approach to protect financial data and avoid common infrastructure vulnerabilities:
+
+### 1. Preemptive Route Protection (Laravel Sanctum)
+All financial endpoints (including balance checks and transactional events) are guarded by `auth:sanctum` middleware. Requests without a valid Bearer Token are intercepted and rejected with a `401 Unauthorized` status before processing any application parameters.
+
+### 2. Form Request Validation & Anti-SQL Injection
+Input validation is decoupled from controllers using custom Form Requests (`BalanceRequest` and `AccountEventRequest`). 
+* Parameters are validated and strictly cast (e.g., `account_id` is enforced as an `integer`).
+* By using Laravel's native validation layered with Eloquent ORM (`BankAccount::findOrFail`), the application enforces **Parameterized Queries (Prepared Statements)** via PDO. This ensures user input is never interpreted as executable database commands, **completely neutralizing SQL Injection (SQLi) vectors**.
+
+### 3. Output Integrity Protection (API Resources)
+Data encapsulation is protected via Eloquent Resources (`BalanceResource` and `BankAccountResource`). This layer sanitizes internal database structures, hides sensitive backend information, and casts money parameters into strict primitives (like `float` decimals) before outputting the JSON response.
+
+### 4. Custom Exception Interception
+To meet strict interface specifications without breaking compliance, validation exceptions and missing database records are unified under custom interceptors, forcing safe fallback structures (`404 Not Found` with a body of `0`) instead of exposing infrastructure logs to the client.
 
 ---
 
 ## 📐 Key Design Patterns Implemented
 
 ### 1. Service Pattern
-All business rules (e.g., *“Can this account withdraw this amount?”*) are encapsulated inside dedicated Service classes, ensuring controllers remain thin, clean, and testable.
+All business rules (e.g., *“Can this account withdraw this amount?”*) are encapsulated inside dedicated Service classes under `app/Services/`, ensuring controllers remain thin, clean, and testable.
 
 ### 2. Polymorphic Event Handler
 The `/api/event` architecture utilizes a dynamic routing pattern. Based on the payload's `"type"` field, the request is cleanly dispatched to its respective domain Service, maintaining high cohesion and separation of concerns.
@@ -42,22 +63,23 @@ For the `transfer` feature, the API guarantees that money deducted from the orig
 ## 📖 API Endpoints & Event Specification
 
 ### State Management
-* `POST /reset` - Resets the state of the application before running test suites.
+* `POST /reset` - Resets the state of the application before running test suites (Public endpoint).
   * **Response:** `200 OK`
 
-### Balance Actions
-* `GET /balance?account_id={id}` - Retrieves the current balance for an account.
+### Balance Actions (Authenticated)
+* `GET /api/balance?account_id={id}` - Retrieves the current balance for an account.
+  * **Headers:** `Authorization: Bearer <token>`, `Accept: application/json`
   * **Response (Existing Account):** `200 OK` (Body: `20`)
-  * **Response (Non-existing Account):** `404 Not Found` (Body: `0`)
+  * **Response (Non-existing Account / Invalid Input):** `404 Not Found` (Body: `0`)
 
 ---
 
-### Transactional Events
-* `POST /event` - Single endpoint handling dynamic financial events (`deposit`, `withdraw`, and `transfer`).
+### Transactional Events (Authenticated)
+* `POST /api/event` - Single endpoint handling dynamic financial events (`deposit`, `withdraw`, and `transfer`).
+  * **Headers:** `Authorization: Bearer <token>`, `Accept: application/json`
 
 #### 1. Deposit
 Used to initialize an account or add funds to an existing one.
-
 * **Payload Example:**
 ```json
 {
@@ -168,7 +190,7 @@ Follow these steps to set up the development environment:
 #### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/gabeefadel/bank_account_api.git
+git clone [https://github.com/gabeefadel/bank_account_api.git](https://github.com/gabeefadel/bank_account_api.git)
 cd bank_account_api
 
 ```
@@ -214,12 +236,36 @@ Generate the secure application encryption key:
 
 ```
 
-#### 6. Run Database Migrations
+#### 6. Run Database Migrations & API Setup
 
-Run the database migrations to set up your tables:
+Run the database migrations and register the API routes infrastructure inside the container:
 
 ```bash
 ./vendor/bin/sail artisan migrate
+
+```
+
+---
+
+## 🧪 Running Automated Tests
+
+The test suite is built on top of PHPUnit and covers edge cases, business logic validation, and security vulnerabilities.
+
+### Run All Tests
+
+To run the full suite of automated tests inside the Dockerized environment, execute:
+
+```bash
+./vendor/bin/sail artisan test
+
+```
+
+### Run Specific Feature Tests
+
+To run only the tests related to the bank account balance feature (covering happy paths, missing accounts, unauthenticated blocks, and malicious SQL injection payloads), run:
+
+```bash
+./vendor/bin/sail artisan test --filter=BankAccountBalanceTest
 
 ```
 
@@ -230,26 +276,33 @@ Run the database migrations to set up your tables:
 Here are the most common commands you will use during development:
 
 * **Stop the environment:**
+
 ```bash
 ./vendor/bin/sail down
 
 ```
 
+* **Clear application and route cache:**
 
-* **Run tests:**
 ```bash
-./vendor/bin/sail test
+./vendor/bin/sail artisan route:clear
+./vendor/bin/sail artisan config:clear
 
 ```
 
+* **Regenerate Composer class map autoloading:**
+
+```bash
+./vendor/bin/sail composer dump-autoload
+
+```
 
 * **Access Database / Tinker:**
+
 ```bash
 ./vendor/bin/sail artisan tinker
 
 ```
-
-
 
 ```
 

@@ -7,10 +7,13 @@ use App\Http\Requests\BalanceRequest;
 use App\Http\Resources\BankAccountResource;
 use App\Http\Resources\BalanceResource; 
 use App\Services\AccountService;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Services\AccountEventService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\DTOs\AccountEventDTO;
+
 
 use Exception;
 
@@ -30,13 +33,19 @@ class BankAccountController extends Controller
         return response()->json('OK', 200);
     }
 
-    public function store(AccountEventRequest $request): JsonResponse
+    public function store(AccountEventRequest $request, AccountEventService $eventService): JsonResponse
     {
         try {
+            $dto = AccountEventDTO::fromRequest($request->validated());
+            $result = $eventService->execute($dto);
 
-        } catch (Exception) 
-        {
-            return response()->json(['error' => 'Transaction failed securely.'], 400);
+            return (new BankAccountResource($result))
+                ->toResponse($request)
+                ->setStatusCode(201);
+        } catch (ModelNotFoundException|\InvalidArgumentException $e) {
+            return response()->json(0, 404);
+        } catch (Exception $e) {
+            return response()->json(['error' => 'An internal server error occurred.'], 500);
         }
     }
 

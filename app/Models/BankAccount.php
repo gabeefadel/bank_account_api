@@ -4,24 +4,34 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BankAccount extends Model
 {
     use HasFactory;
 
-    protected $table = 'bank_accounts';
+    protected $fillable = ['id', 'balance'];
 
-    protected $fillable = [
-        'balance',
-    ];
+    public $incrementing = false; 
+    protected $keyType = 'string';
 
-    protected $casts = [
-        'balance' => 'decimal:2',
-    ];
 
-    public function logs(): HasMany
+    public function credit(float $amount): void
     {
-        return $this->hasMany(LogAccount::class, 'bank_account_id', 'id');
+        $this->balance += $amount;
+    }
+
+ 
+    public function debit(float $amount): void
+    {
+        if ($this->hasInsufficientFundsFor($amount)) {
+            throw new \InvalidArgumentException("Insufficient funds.");
+        }
+
+        $this->balance -= $amount;
+    }
+
+    public function hasInsufficientFundsFor(float $amount): bool
+    {
+        return $this->balance < $amount;
     }
 }
